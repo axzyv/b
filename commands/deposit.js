@@ -31,7 +31,7 @@ async function getOrAssignAddresses(userId) {
     // SOL
     if (!userData.sol_deposit_address) {
         const { count } = await db.get("SELECT COUNT(*) as count FROM users WHERE sol_deposit_index IS NOT NULL");
-        const address = deriveSolAddress(MNEMONIC, count);
+        const address = await deriveSolAddress(MNEMONIC, count);
         await db.run('UPDATE users SET sol_deposit_address = ?, sol_deposit_index = ? WHERE user_id = ?', address, count, userId);
     }
 

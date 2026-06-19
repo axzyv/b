@@ -113,7 +113,7 @@ module.exports = {
                     if (!row || row.sol_deposit_index == null)
                         throw new Error(`Address \`${fromAddress}\` is not assigned to any user in the database.`);
 
-                    const keypair = deriveSolKeypair(MNEMONIC, row.sol_deposit_index);
+                    const keypair = await deriveSolKeypair(MNEMONIC, row.sol_deposit_index);
 
                     let sendLamports;
                     if (isSweep) {
