@@ -2,8 +2,17 @@ const { BIP32Factory } = require('bip32');
 const ecc = require('tiny-secp256k1');
 const bitcoin = require('bitcoinjs-lib');
 const bip39 = require('bip39');
-const { derivePath } = require('ed25519-hd-key');
 const { Keypair } = require('@solana/web3.js');
+
+// ed25519-hd-key is an ES module and cannot be loaded with require().
+// We resolve it once lazily via dynamic import() and cache the result.
+let _ed25519HdKeyPromise = null;
+function getDerivePath() {
+    if (!_ed25519HdKeyPromise) {
+        _ed25519HdKeyPromise = import('ed25519-hd-key').then((m) => m.derivePath);
+    }
+    return _ed25519HdKeyPromise;
+}
 
 bitcoin.initEccLib(ecc);
 const bip32 = BIP32Factory(ecc);
@@ -41,21 +50,23 @@ function deriveLtcKeyPair(mnemonic, index) {
     return { node: child, address: payment.address, network: LTC_NETWORK };
 }
 
-function deriveSolAddress(mnemonic, index) {
+async function deriveSolAddress(mnemonic, index) {
     if (!bip39.validateMnemonic(mnemonic)) {
         throw new Error('Invalid mnemonic provided in LTC_MASTER_MNEMONIC secret.');
     }
     const seed = bip39.mnemonicToSeedSync(mnemonic);
+    const derivePath = await getDerivePath();
     const { key } = derivePath(`m/44'/501'/${index}'/0'`, seed.toString('hex'));
     const keypair = Keypair.fromSeed(key);
     return keypair.publicKey.toBase58();
 }
 
-function deriveSolKeypair(mnemonic, index) {
+async function deriveSolKeypair(mnemonic, index) {
     if (!bip39.validateMnemonic(mnemonic)) {
         throw new Error('Invalid mnemonic provided in LTC_MASTER_MNEMONIC secret.');
     }
     const seed = bip39.mnemonicToSeedSync(mnemonic);
+    const derivePath = await getDerivePath();
     const { key } = derivePath(`m/44'/501'/${index}'/0'`, seed.toString('hex'));
     return Keypair.fromSeed(key);
 }
